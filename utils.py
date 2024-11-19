@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.typing as npt
-from brokenaxes import brokenaxes
 import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind
 
@@ -8,15 +7,25 @@ def overlap(x:npt.ArrayLike, y:npt.ArrayLike) -> bool:
     """Determine if two distributions overlap"""
     return not(max(x) < min(y) or max(y) < min(x))
 
-def simulate(x_word, x_image, task, sigma:np.float32, n_iter:int) ->npt.ArrayLike | npt.ArrayLike:
+def simulate(p_word, 
+             p_image, 
+             task, 
+             sigma:np.float32, 
+             n_iter:int, 
+             x_word=None, 
+             x_image=None) ->npt.ArrayLike | npt.ArrayLike:
     """Generate simulation
     Parameters
     ----------
-    x_word: timing parameters for word
+    p_word: timing parameters for word perceptual processing
 
-    x_image: timing parameter for image
+    p_image: timing parameters for image perceptual processing
+    
+    x_word: timing parameters for word -> concept
 
-    task: timing parameter for task
+    x_image: timing parameter for image -> concept
+
+    task: timing parameter for c -> task
 
     sigma: np.float32
         amount of noise to add to distribution
@@ -26,7 +35,7 @@ def simulate(x_word, x_image, task, sigma:np.float32, n_iter:int) ->npt.ArrayLik
     """
     noise_w = np.random.normal(0, sigma, n_iter)
     noise_i = np.random.normal(0, sigma, n_iter)
-    return np.array(x_word + task + noise_w), np.array(x_image + task + noise_i)
+    return np.array(p_word + x_word + task + noise_w), np.array(p_image + x_image + task + noise_i)
 
 def plot(word_dat:npt.ArrayLike, image_dat:npt.ArrayLike):
     """Plot distributions"""
