@@ -5,26 +5,26 @@ from dataclasses import dataclass
 import pandas as pd
 
 @dataclass
-class Data(object):
+class DataGenerator(object):
 
     params:dict
 
     def __post_init__(self):
         self.params = set_params(self.params)   
 
-    def generate(self, theory:str):
+    def generate(self, dist_type:str):
         """Generate data"""
-        if theory == 'same':
+        if dist_type == 'same':
             self.data = generate_same(self.params)
             return self
-        elif theory == 'diff':
+        elif dist_type == 'diff':
             self.data = generate_diff(self.params)
             return self
-        elif theory == 'combined':
+        elif dist_type == 'combined':
             self.data = combine_data(self.params)
             return self
         else:
-            raise ValueError(f"Invalid theory: {theory}")
+            raise ValueError(f"Invalid theory: {dist_type}")
     
     def to_pandas(self):
 
