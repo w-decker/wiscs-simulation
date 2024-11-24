@@ -10,9 +10,7 @@ We hypothesize that the meanings of words and images exist in a shared conceptua
 Here, we model $S$, the corresponding reaction time associated with semantic processing, as the sum of perceptual, conceptual, and task-specific processes (and some error). 
 
 $$
-
 S = \mathbf{p} + \mathbf{x} + \mathbf{t} + \epsilon
-
 $$
 
 ## What data do we expect?
