@@ -61,7 +61,7 @@ def _generate_diff_trial_means(params, trial):
 
 def generate_same(params: dict):
     """Generate data where the difference in distributions is the same across trials."""
-    # Normalize the params to compute relative means
+    
     total_word = sum(params["word"].values())
     total_image = sum(params["image"].values())
 
