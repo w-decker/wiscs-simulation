@@ -3,12 +3,15 @@ from .constants import EMPTY_PARAMS
 import numpy as np
 import pandas as pd
 
-def set_params(params:dict=None, help=False):
+def set_params(params:dict=None, return_empty=False):
     """Set data parameters"""
 
-    if params is None and help:
-        _ = sys.stdout.write("Params must be a dictionary of dictionaries with the following keys:\n")
+    if params is None and return_empty:
+        _ = sys.stdout.write(f"Params must be a dictionary of dictionaries with the following keys:\n {EMPTY_PARAMS.keys()}")
         return EMPTY_PARAMS
+    
+    elif params is not None and return_empty:
+        raise ValueError("If params is provided, return_empty must be False")
     
     elif _validate_params(params):
             return params
@@ -96,7 +99,7 @@ def generate_diff(params: dict):
 def combine_data(params):
     """Combine data from generate_same and generate_diff into a single DataFrame."""
 
-    word_same, image_same = generate_same(params)
-    word_diff, image_diff = generate_diff(params)
+    word_same, image_same, target = generate_same(params)
+    word_diff, image_diff, diff = generate_diff(params)
 
-    return word_same, image_same, word_diff, image_diff
+    return word_same, image_same, target, word_diff, image_diff, diff
