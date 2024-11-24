@@ -1,5 +1,5 @@
 import sys
-from constants import EMPTY_PARAMS
+from .constants import EMPTY_PARAMS
 import numpy as np
 import pandas as pd
 
@@ -13,24 +13,22 @@ def set_params(params:dict=None, help=False):
     elif _validate_params(params):
             return params
     
-def _validate_params(params:dict):
-    """Validate data parameters"""
-    
+def _validate_params(params):
     if not isinstance(params, dict):
         raise ValueError("Params must be a dictionary")
-    
-    if not all([isinstance(params[key], dict) for key in params.keys()]):
+
+    # Check that 'word' and 'image' keys are dictionaries
+    if not isinstance(params.get("word"), dict) or not isinstance(params.get("image"), dict):
         raise ValueError("Params must be a dictionary of dictionaries")
-    
-    if not all([key in ["word", "image", "variance", "n_participants", "n_trials"] for key in params.keys()]):
-        raise ValueError("Params must contain 'word' and 'image' keys")
-    
-    if not all([key in ["perceptual", "conceptual", "task"] for key in params["word"].keys()]):
-        raise ValueError("Params['word'] must contain 'perceptual', 'conceptual', and 'task' keys")
-    
-    if not all([key in ["perceptual", "conceptual", "task"] for key in params["image"].keys()]):
-        raise ValueError("Params['image'] must contain 'perceptual', 'conceptual', and 'task' keys")
-    
+
+    # Check that 'variance', 'n_participants', and 'n_trials' are present and are scalar values
+    if not isinstance(params.get("variance"), (int, float)):
+        raise ValueError("Params must contain 'variance' as a scalar value")
+    if not isinstance(params.get("n_participants"), int):
+        raise ValueError("Params must contain 'n_participants' as an integer")
+    if not isinstance(params.get("n_trials"), int):
+        raise ValueError("Params must contain 'n_trials' as an integer")
+
     return True
 
 def _generate_diff_trial_means(params, trial):
@@ -68,66 +66,37 @@ def generate_same(params: dict):
     word_mean = total_word / (total_word + total_image)
     image_mean = total_image / (total_word + total_image)
 
+    # Difference in means
+    target = abs(word_mean - image_mean)
+
     # Generate data for trials
     word = [np.random.normal(word_mean, params["variance"], params["n_participants"]) for _ in range(params["n_trials"])]
     image = [np.random.normal(image_mean, params["variance"], params["n_participants"]) for _ in range(params["n_trials"])]
 
-    return word, image
+    return word, image, target
 
 def generate_diff(params: dict):
     """Generate data where the difference in distributions varies across trials."""
     word = []
     image = []
+    trial_diffs = []
 
     for trial in range(params["n_trials"]):
         # Generate trial-specific means
-        word_mean, image_mean, _ = _generate_diff_trial_means(params, trial)
+        word_mean, image_mean, diff = _generate_diff_trial_means(params, trial)
 
         # Generate distributions
         word.append(np.random.normal(word_mean, params["variance"], params["n_participants"]))
         image.append(np.random.normal(image_mean, params["variance"], params["n_participants"]))
+        trial_diffs.append(diff)
 
-    return word, image
 
-def combine_data(params: dict):
+    return word, image, trial_diffs
+
+def combine_data(params):
     """Combine data from generate_same and generate_diff into a single DataFrame."""
-    # Generate data
+
     word_same, image_same = generate_same(params)
     word_diff, image_diff = generate_diff(params)
 
-    data = []
-
-    # Add 'same' distribution data
-    for trial in range(params["n_trials"]):
-        for participant in range(params["n_participants"]):
-            data.append({
-                "data": word_same[trial][participant],
-                "participant": participant + 1,
-                "condition": "word",
-                "distribution_type": "same"
-            })
-            data.append({
-                "data": image_same[trial][participant],
-                "participant": participant + 1,
-                "condition": "image",
-                "distribution_type": "same"
-            })
-
-    # Add 'diff' distribution data
-    for trial in range(params["n_trials"]):
-        for participant in range(params["n_participants"]):
-            data.append({
-                "data": word_diff[trial][participant],
-                "participant": participant + 1,
-                "condition": "word",
-                "distribution_type": "diff"
-            })
-            data.append({
-                "data": image_diff[trial][participant],
-                "participant": participant + 1,
-                "condition": "image",
-                "distribution_type": "diff"
-            })
-
-    # Convert to DataFrame
-    return pd.DataFrame(data)
+    return word_same, image_same, word_diff, image_diff
