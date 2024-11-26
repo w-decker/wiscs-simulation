@@ -37,3 +37,7 @@ Let's see how this looks through a different angle.
 ![alt text](figs/compare.png)
 
 The y-axis is trials and the x-axis is the differene in RT between word and image items. Our main hypothesis suggests that there will be little differences, as seen by the blue line. The alternative shows high variability across trials. 
+
+## Statistical testing
+
+Click [**HERE**](https://html-preview.github.io/?url=https://github.com/w-decker/wiscs-simulation/blob/main/stats/wiscs-simulation-stats.html) to see some early tests of the simulated data.
