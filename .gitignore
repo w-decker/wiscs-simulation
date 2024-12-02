@@ -168,3 +168,5 @@ data/*
 *.Rproj
 tests.Rmd
 data/
+
+.DS_Store
