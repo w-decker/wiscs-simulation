@@ -13,31 +13,4 @@ $$
 S = \mathbf{p} + \mathbf{x} + \mathbf{t} + \epsilon
 $$
 
-## What data do we expect?
-
-Because of this, we expect that, across trial-blocks, differences in reaction times across words and images will be the same.
-
-![alt text](figs/main_dist.png)
-
-### An alternative hypothesis
-
-We contrast these data with an alternative hypothesis, that conceptual processing is modality specific. 
-
-![alt text](figs/alt1.png)
-
-If this is the case, differences in reaction times acorss words and images over trials will not be consistent. 
-
-![alt text](figs/alt_dist.png)
-
-The variability across trials is clear.
-
-## A comparative look
-Let's see how this looks through a different angle.
-
-![alt text](figs/compare.png)
-
-The y-axis is trials and the x-axis is the differene in RT between word and image items. Our main hypothesis suggests that there will be little differences, as seen by the blue line. The alternative shows high variability across trials. 
-
-## Statistical testing
-
-Click [**HERE**](https://html-preview.github.io/?url=https://github.com/w-decker/wiscs-simulation/blob/main/stats/wiscs-simulation-stats.html) to see some early tests of the simulated data.
+---
