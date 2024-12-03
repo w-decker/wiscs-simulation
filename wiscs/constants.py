@@ -11,5 +11,6 @@ EMPTY_PARAMS = {
     },
     "n_participants": None,
     "n_trials": None,
-    "variance": None
+    "variance": None,
+    "dist_type": None
 }

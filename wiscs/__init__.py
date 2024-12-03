@@ -18,3 +18,4 @@ def set_params(params: dict = None, return_empty=False):
         raise ValueError("If params is provided, return_empty must be False")
     elif _validate_params(params):
         config.p = params
+        print("Params set successfully")
