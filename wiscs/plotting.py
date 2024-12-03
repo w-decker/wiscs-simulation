@@ -29,34 +29,42 @@ class Plot(DataGenerator):
             ax[1].set_title("Image")
         plt.show()
 
-    def grid(self):
+    def grid(self, show: bool = True):
         """Plot grid of histograms across trials for word and image data"""
-
-        fig, ax = plt.subplots(6, 5, figsize=(20, 15))
 
         deltas = []
 
-        for idx, axis in enumerate(ax.flatten()):
-            axis.hist(self.data[0][:, idx], bins=20, alpha=0.5, label='word')
-            axis.hist(self.data[1][:, idx], bins=20, alpha=0.5, label='image')
-            axis.set_title(f'Trial {idx}')
+        if show:
+            fig, ax = plt.subplots(6, 5, figsize=(20, 15)) 
 
-            w_mean = np.mean(self.data[0][:, idx])
-            i_mean = np.mean(self.data[1][:, idx])
-            delta = np.abs(round(w_mean - i_mean, 3))
-            deltas.append(delta)
+            for idx, axis in enumerate(ax.flatten()):
+                axis.hist(self.data[0][:, idx], bins=20, alpha=0.5, label='word')
+                axis.hist(self.data[1][:, idx], bins=20, alpha=0.5, label='image')
+                axis.set_title(f'Trial {idx}')
 
-            axis.scatter((w_mean, i_mean), (10, 10), color='red')
+                w_mean = np.mean(self.data[0][:, idx])
+                i_mean = np.mean(self.data[1][:, idx])
+                delta = np.abs(round(w_mean - i_mean, 3))
+                deltas.append(delta)
 
-            x_min, x_max = axis.get_xlim()
-            xmin_frac = (w_mean - x_min) / (x_max - x_min)
-            xmax_frac = (i_mean - x_min) / (x_max - x_min)
-            axis.axhline(y=10, xmin=xmin_frac, xmax=xmax_frac, color="red", linestyle="--", label=r'$\Delta$ {}'.format(delta))
+                axis.scatter((w_mean, i_mean), (10, 10), color='red')
 
-            axis.legend()
+                x_min, x_max = axis.get_xlim()
+                xmin_frac = (w_mean - x_min) / (x_max - x_min)
+                xmax_frac = (i_mean - x_min) / (x_max - x_min)
+                axis.axhline(y=10, xmin=xmin_frac, xmax=xmax_frac, color="red", linestyle="--", label=r'$\Delta$ {}'.format(delta))
 
-        plt.tight_layout()  
-        plt.show()
+                axis.legend()
+
+            plt.tight_layout()  
+            plt.show()
+
+        else:
+            for idx in range(self.params["n_trials"]):
+                w_mean = np.mean(self.data[0][:, idx])
+                i_mean = np.mean(self.data[1][:, idx])
+                delta = np.abs(round(w_mean - i_mean, 3))
+                deltas.append(delta)
 
         self.deltas = np.array(deltas)
         return self
