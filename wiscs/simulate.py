@@ -1,5 +1,5 @@
 from . import config
-from .utils import validate_params, parse_params
+from .utils import validate_params, parse_params, update_params
 
 import numpy as np
 import warnings
@@ -44,7 +44,7 @@ class DataGenerator(object):
     
     Methods
     -------
-    fit(self, params:dict=None)
+    fit(self, params:dict=None, overwrite:bool=False)
         Generate data based on parameters
 
     to_pandas(self) -> pd.DataFrame
@@ -59,13 +59,27 @@ class DataGenerator(object):
     def __init__(self):
         self.params = config.p  
 
-    def fit(self, params:dict=None):
-        if params is not None:
-            validate_params(params)
-            self.data = generate(parse_params(params))
+    def fit(self, params:dict=None, overwrite:bool=False):
+        if overwrite:
+            if params is None:
+                raise ValueError("If overwrite is True, params must be provided")
+            elif params is not None and len(params) != len(self.params):
+                self.params = update_params(self.params, params)
+                self.data = generate(self.params)
+            elif params is not None and len(params) == len(self.params):
+                validate_params(params)
+                self.params = parse_params(params)
+                self.data = generate(self.params)
         else:
-            self.data = generate(self.params)
-        return self          
+            if params is not None and len(params) == len(self.params):
+                validate_params(params)
+                self.data = generate(parse_params(params))
+            elif params is not None and len(params) != len(self.params):
+                self.data = generate(update_params(self.params, params))
+            else:
+                self.data = generate(self.params)
+
+        return self    
     
     def to_pandas(self) -> pd.DataFrame:
         """Convert data to pandas dataframe"""
