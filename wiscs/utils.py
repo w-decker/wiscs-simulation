@@ -54,3 +54,30 @@ def parse_params(params):
         category, attribute = key.split('.')
         parsed[category][attribute] = value
     return dict(parsed)
+
+def update_params(params, kwargs) -> dict:
+    """
+    Update parameters with new values.
+
+    Parameters
+    ----------
+    params: dict
+        Original dictionary of parameters
+
+    kwargs: dict
+        Keys and values to be updated
+
+    Returns
+    -------
+    dict: Updated parameters.
+    """
+    update = params.copy()
+    new = parse_params(kwargs)
+
+    for key, subdict in new.items():
+        if key in update and isinstance(update[key], dict) and isinstance(subdict, dict):
+            update[key].update(subdict)
+        else:
+            update[key] = subdict
+
+    return update
