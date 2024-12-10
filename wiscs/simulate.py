@@ -1,65 +1,89 @@
 from . import config
+from .utils import validate_params, parse_params
 
 import numpy as np
+import warnings
+import numpy.typing as npt
 import pandas as pd
 
-def generate_same(params: dict):
-    """Generate data where the difference in distributions is the same across trials."""
+def make_tasks(low, high, n) -> npt.ArrayLike:
+    """Generate task parameters"""
+    return np.random.permutation(np.linspace(low, high, n).round(0))
+
+def generate(params:dict) -> npt.ArrayLike | npt.ArrayLike:
+    """Generate data
     
-    total_word = sum(params["word"].values())
-    total_image = sum(params["image"].values())
+    Returns
+    -------
+    image, word
+    """
 
-    word = np.random.normal(total_word, params["variance"], 
-                            (params["n_participants"], params["n_trials"]))
-    image = np.random.normal(total_image, params["variance"], 
-                             (params["n_participants"], params["n_trials"]))
-    return word, image
+    if not np.array_equal(params["image"]["task"], params["word"]["task"]):
+        warnings.warn("Tasks parameters are different. Generating data for ALTERNATIVE hypothesis.")
 
-def generate_diff(params: dict):
-    """Generate data where the difference in distributions is different across trials."""
-    
-    total_word = sum([params["word"]["perceptual"], params["word"]["conceptual"]])
-    total_image = sum([params["image"]["perceptual"], params["image"]["conceptual"]])
+    # noise distributions
+    var_item_image = np.random.normal(0, params["var"]["image"], (params["n"]["participant"], params["n"]["question"], params["n"]["trial"]))
+    var_item_word = np.random.normal(0, params["var"]["word"], (params["n"]["participant"], params["n"]["question"], params["n"]["trial"]))
+    var_question = np.random.normal(0, params["var"]["question"], (params["n"]["participant"], params["n"]["question"], params["n"]["trial"]))
+    var_participant = np.random.normal(0, params["var"]["participant"], (params["n"]["participant"], params["n"]["question"], params["n"]["trial"]))
 
-    word = np.random.normal(total_word, params["variance"],(params["n_participants"], params["n_trials"]))
-    image = np.random.normal(total_image, params["variance"],(params["n_participants"], params["n_trials"]))
-
-    for i in range(params["n_trials"]):
-        word[:, i] += np.random.uniform(*params["word"]["task"])
-        image[:, i] += np.random.uniform(*params["image"]["task"])
-
-    return word, image
+    return \
+            (params["image"]["concept"]
+           + params["image"]["task"][None, :, None] 
+           + var_item_image
+           + var_participant
+           + var_question), \
+            (params["word"]["concept"]
+            + params["word"]["task"][None, :, None]
+            + var_item_word
+            + var_question
+            + var_participant)
 
 class DataGenerator(object):
+    """Data generator
+    
+    Methods
+    -------
+    fit(self, params:dict=None)
+        Generate data based on parameters
+
+    to_pandas(self) -> pd.DataFrame
+        Convert data to pandas dataframe
+
+    Attributes
+    ----------
+    data: npt.ArrayLike | npt.ArrayLike
+        Generated data (image, word)
+    """ 
 
     def __init__(self):
         self.params = config.p  
 
-    def generate(self, dist_type:str=None, params=None):
-        """Generate data"""
+    def fit(self, params:dict=None):
         if params is not None:
-            self.params = params
-        if dist_type is not None:
-            self.params["dist_type"] = dist_type
-
-        if self.params["dist_type"] == 'same':
-            assert self.params["word"]["task"] == self.params["image"]["task"], "Task parameters bust be the same if dist_type == 'same'"
-            self.data = generate_same(self.params)
-            return self
-        elif self.params["dist_type"] == 'diff':
-            assert isinstance(self.params["word"]["task"], tuple) 
-            assert isinstance(self.params["image"]["task"], tuple)
-            self.data = generate_diff(self.params)
-            return self
-
-    def to_pandas(self):
-        """Convert data into a pandas DataFrame"""
+            validate_params(params)
+            self.data = generate(parse_params(params))
+        else:
+            self.data = generate(self.params)
+        return self          
+    
+    def to_pandas(self) -> pd.DataFrame:
+        """Convert data to pandas dataframe"""
         
-        word, image = self.data
-        df = pd.DataFrame({
-            "word": word.flatten(),
-            "image": image.flatten(),
-            "participant": np.repeat(range(self.params["n_participants"]), self.params["n_trials"]),
-            "trial": np.tile(range(self.params["n_trials"]), self.params["n_participants"])
+        df_image = pd.DataFrame({
+            'participant': np.repeat(np.arange(self.params["n"]["participant"]), self.params["n"]["question"] * self.params["n"]["trial"]),
+            'question': np.tile(np.repeat(np.arange( self.params["n"]["question"]), self.params["n"]["trial"]), self.params["n"]["participant"]),
+            'trial': np.tile(np.arange(self.params["n"]["trial"]), self.params["n"]["participant"] * self.params["n"]["question"]),
+            'RT': self.data[0].flatten() # image data
         })
-        return df
+
+        df_word = pd.DataFrame({
+            'participant': np.repeat(np.arange(self.params["n"]["participant"]), self.params["n"]["question"] * self.params["n"]["trial"]),
+            'question': np.tile(np.repeat(np.arange( self.params["n"]["question"]), self.params["n"]["trial"]), self.params["n"]["participant"]),
+            'trial': np.tile(np.arange(self.params["n"]["trial"]), self.params["n"]["participant"] * self.params["n"]["question"]),
+            'RT': self.data[1].flatten() # word data
+        })
+
+        df_image['modality'] = 'image'
+        df_word['modality'] = 'word'
+        return pd.concat([df_image, df_word], ignore_index=True)

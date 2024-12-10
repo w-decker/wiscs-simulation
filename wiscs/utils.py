@@ -1,36 +1,56 @@
 from .constants import EMPTY_PARAMS
+from collections import defaultdict
+import numpy as np
+import numpy.typing as npt
+from typing import Callable, Union, get_args
+import types
 
-def _validate_params(params):
-    if not isinstance(params, dict):
-        raise ValueError("Params must be a dictionary")
+def validate_params(params: dict) -> bool:
+    for key, value in params.items():
+        if key not in EMPTY_PARAMS:
+            raise ValueError(f"Unexpected parameter: {key}")
+        
+        expected_type = EMPTY_PARAMS[key]
 
-    # Check that 'word' and 'image' keys are dictionaries
-    if not isinstance(params.get("word"), dict) or not isinstance(params.get("image"), dict):
-        raise ValueError("Params must contain 'word' and 'image' dictionaries")
-    required_keys = ["perceptual", "conceptual", "task"]
+        if isinstance(expected_type, type):
+            if not isinstance(value, expected_type):
+                raise TypeError(f"Parameter {key} should be {expected_type}, but got {type(value)}")
 
-    # Check 'word' dictionary
-    for key in required_keys:
-        if key not in params["word"]:
-            raise ValueError(f"'word' dictionary must contain the key '{key}'")
-        if not isinstance(params["word"][key], (int, float, tuple)):
-            raise ValueError(f"'word[{key}]' must be a numeric value")
+        elif (isinstance(expected_type, types.UnionType) or
+              (hasattr(expected_type, '__origin__') and expected_type.__origin__ is Union)):
 
-    # Check 'image' dictionary
-    for key in required_keys:
-        if key not in params["image"]:
-            raise ValueError(f"'image' dictionary must contain the key '{key}'")
-        if not isinstance(params["image"][key], (int, float, tuple)):
-            raise ValueError(f"'image[{key}]' must be a numeric value")
+            union_args = get_args(expected_type)
+            if not any(isinstance(value, t) for t in union_args):
+                raise TypeError(f"Parameter {key} should be one of {union_args}, but got {type(value)}")
+            
+        elif expected_type == npt.ArrayLike:
+            if not isinstance(value, (list, tuple, np.ndarray)):
+                raise TypeError(f"Parameter {key} should be an array-like, but got {type(value)}")
 
-    # Check that 'variance', 'n_participants', 'n_trials' and 'dist_type' are present and are correct types
-    if not isinstance(params.get("variance"), (int, float)):
-        raise ValueError("Params must contain 'variance' as a scalar value")
-    if not isinstance(params.get("n_participants"), int):
-        raise ValueError("Params must contain 'n_participants' as an integer")
-    if not isinstance(params.get("n_trials"), int):
-        raise ValueError("Params must contain 'n_trials' as an integer")
-    if not isinstance(params.get("dist_type"), str):
-        raise ValueError("Params must contain 'dist_type' as a string")
+        elif expected_type == Callable[..., npt.ArrayLike]:
+            if not callable(value):
+                raise TypeError(f"Parameter {key} should be a callable, but got {type(value)}")
+
+        else:
+            raise TypeError(f"Unsupported type for parameter {key}: {expected_type}")
 
     return True
+
+def parse_params(params):
+    """
+    Parse a dictionary with compound keys into a nested dictionary.
+
+    Parameters
+    ----------
+    params: dict 
+        Dictionary with keys in the format 'category.attribute'.
+
+    Returns
+    -------
+    dict: Nested dictionary with categories as top-level keys and attributes as subkeys.
+    """
+    parsed = defaultdict(dict)
+    for key, value in params.items():
+        category, attribute = key.split('.')
+        parsed[category][attribute] = value
+    return dict(parsed)

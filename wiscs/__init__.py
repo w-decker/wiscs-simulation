@@ -2,7 +2,7 @@ from .constants import EMPTY_PARAMS
 from .utils import *
 from .simulate import *
 from . import config
-from .utils import _validate_params
+from .utils import validate_params, parse_params
 
 import sys
 
@@ -11,11 +11,11 @@ def set_params(params: dict = None, return_empty=False):
 
     if params is None and return_empty:
         sys.stdout.write(
-            f"Params must be a dictionary of dictionaries with the following keys:\n {EMPTY_PARAMS.keys()}"
+            f"Params must be a dictionary with the following keys:\n {EMPTY_PARAMS.keys()}"
         )
         return EMPTY_PARAMS
     elif params is not None and return_empty:
         raise ValueError("If params is provided, return_empty must be False")
-    elif _validate_params(params):
-        config.p = params
+    elif validate_params(params):
+        config.p = parse_params(params)
         print("Params set successfully")
