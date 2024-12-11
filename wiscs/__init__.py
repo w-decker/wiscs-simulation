@@ -1,8 +1,7 @@
-from .constants import EMPTY_PARAMS
-from .utils import *
+from .params import EMPTY_PARAMS
+from .params import *
 from .simulate import *
 from . import config
-from .utils import validate_params, parse_params
 
 import sys
 
