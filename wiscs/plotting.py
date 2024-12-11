@@ -2,90 +2,112 @@ from .simulate import DataGenerator
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+from .methods import deltas, nearest_square_dims
 
 class Plot(DataGenerator):
     def __init__(self, DG: DataGenerator):
         self.__dict__ = DG.__dict__.copy()
     
-    def imshow(self):
-        """Plot heatmap"""
-        fig, ax = plt.subplots(1, len(self.data), figsize=(10, 5))
-        for i in range(len(self.data)):
-            ax[i].imshow(self.data[i], aspect='auto')
-            ax[i].set_xlabel("Trial")
-            ax[i].set_ylabel("Participant")
-            ax[0].set_title("Word")
-            ax[1].set_title("Image")
-        plt.show()
+    def grid(self, **kwargs):
+        """Plot grid of data distributions
+        
+        Parameters
+        ----------
+        kwargs: dict
+            Keys: 'idx', 'question_idx'
+        """
 
-    def hist(self):
-        """Plot histogram"""
-        fig, ax = plt.subplots(1, len(self.data), figsize=(10, 5))
-        for i in range(len(self.data)):
-            ax[i].hist(self.data[i].flatten())
-            ax[i].set_xlabel("RT")
-            ax[i].set_ylabel("Frequency")
-            ax[0].set_title("Word")
-            ax[1].set_title("Image")
-        plt.show()
+        if kwargs.get('idx') == 'participant':
+            rows, cols = nearest_square_dims(self.params["n"]["participant"])
+            fig, axs = plt.subplots(rows, cols, figsize=(cols*5, rows*5))
 
-    def grid(self, show: bool = True):
-        """Plot grid of histograms across trials for word and image data"""
+            for ax, i in zip(axs.flatten(), range(self.params["n"]["participant"])):
+                ax.hist(self.data[0][i, :, :].ravel(), label='image', alpha=0.5)
+                ax.hist(self.data[1][i, :, :].ravel(), label='word', alpha=0.5)
+                ax.set_title(f'Participant {i+1}')
 
-        deltas = []
+                ax.set_xlabel('RT')
+                ax.set_ylabel('Frequency')
 
-        if show:
-            fig, ax = plt.subplots(6, 5, figsize=(20, 15)) 
+                ymax = (max(ax.get_ylim())/2).round(0)
 
-            for idx, axis in enumerate(ax.flatten()):
-                axis.hist(self.data[0][:, idx], bins=20, alpha=0.5, label='word')
-                axis.hist(self.data[1][:, idx], bins=20, alpha=0.5, label='image')
-                axis.set_title(f'Trial {idx}')
+                i_mean = self.data[0][i, :, :].ravel().mean()
+                w_mean = self.data[1][i, :, :].ravel().mean()
 
-                w_mean = np.mean(self.data[0][:, idx])
-                i_mean = np.mean(self.data[1][:, idx])
-                delta = np.abs(round(w_mean - i_mean, 3))
-                deltas.append(delta)
+                ax.scatter(i_mean, ymax, color='red', marker='o')
+                ax.scatter(w_mean, ymax, color='red', marker='o')
 
-                axis.scatter((w_mean, i_mean), (10, 10), color='red')
-
-                x_min, x_max = axis.get_xlim()
+                x_min, x_max = ax.get_xlim()
                 xmin_frac = (w_mean - x_min) / (x_max - x_min)
                 xmax_frac = (i_mean - x_min) / (x_max - x_min)
-                axis.axhline(y=10, xmin=xmin_frac, xmax=xmax_frac, color="red", linestyle="--", label=r'$\Delta$ {}'.format(delta))
+                ax.axhline(xmin=xmin_frac, xmax=xmax_frac, y=ymax, color='red', linestyle='--', label=r'$\Delta$ {}'.format(np.abs(i_mean - w_mean).round(2)))
+                
+                ax.legend()
 
-                axis.legend()
+            plt.show()
+        
+        elif kwargs.get('idx') == 'question':
+            rows, cols = nearest_square_dims(self.params["n"]["question"])
+            fig, axs = plt.subplots(rows, cols, figsize=(cols*5, rows*5))
 
-            plt.tight_layout()  
+            for ax, i in zip(axs.flatten(), range(self.params["n"]["question"])):
+                ax.hist(self.data[0][:, i, :].ravel(), label='image', alpha=0.5)
+                ax.hist(self.data[1][:, i, :].ravel(), label='word', alpha=0.5)
+                ax.set_title(f'Question {i+1}')
+
+                ax.set_xlabel('RT')
+                ax.set_ylabel('Frequency')                
+
+                i_mean = self.data[0][:, i, :].ravel().mean()
+                w_mean = self.data[1][:, i, :].ravel().mean()
+
+                ax.scatter(i_mean, 400, color='red', marker='o')
+                ax.scatter(w_mean, 400, color='red', marker='o')
+
+                x_min, x_max = ax.get_xlim()
+                xmin_frac = (w_mean - x_min) / (x_max - x_min)
+                xmax_frac = (i_mean - x_min) / (x_max - x_min)
+                ax.axhline(xmin=xmin_frac, xmax=xmax_frac, y=400, color='red', linestyle='--', label=r'$\Delta$ {}'.format(np.abs(i_mean - w_mean).round(2)))
+                
+                ax.legend()
             plt.show()
 
-        else:
-            for idx in range(self.params["n_trials"]):
-                w_mean = np.mean(self.data[0][:, idx])
-                i_mean = np.mean(self.data[1][:, idx])
-                delta = np.abs(round(w_mean - i_mean, 3))
-                deltas.append(delta)
+        elif kwargs.get('idx') == 'trial':  
+            rows, cols = nearest_square_dims(self.params["n"]["trial"])
+            fig, axs = plt.subplots(rows, cols, figsize=(cols*5, rows*5))
 
-        self.deltas = np.array(deltas)
-        return self
-    
-def plot_deltas(d1:npt.ArrayLike, d2:npt.ArrayLike, labels:list[str]):
+            q = kwargs.get('question_idx')
+
+            for ax, i in zip(axs.flatten(), range(self.params["n"]["trial"])):
+                ax.hist(self.data[0][:, q, i].ravel(), label='image', alpha=0.5)
+                ax.hist(self.data[1][:, q, i].ravel(), label='word', alpha=0.5)
+                ax.set_title(f'Trial {i+1}')
+
+                ax.set_xlabel('RT')
+                ax.set_ylabel('Frequency')
+
+                i_mean = self.data[0][:, q, i].ravel().mean()
+                w_mean = self.data[1][:, q, i].ravel().mean()
+
+                ax.scatter(i_mean, 400, color='red', marker='o')
+                ax.scatter(w_mean, 400, color='red', marker='o')
+
+                x_min, x_max = ax.get_xlim()
+                xmin_frac = (w_mean - x_min) / (x_max - x_min)
+                xmax_frac = (i_mean - x_min) / (x_max - x_min)
+                ax.axhline(xmin=xmin_frac, xmax=xmax_frac, y=400, color='red', linestyle='--', label=r'$\Delta$ {}'.format(np.abs(i_mean - w_mean).round(2)))
+                
+                ax.legend()
+            plt.show()
+
+def plot_deltas(DG1:DataGenerator, DG2:DataGenerator, idx:str, labels:list[str]) -> None:
     """Plot deltas
-    
-    Parameters
-    ----------
-    d1 : npt.ArrayLike
-    
-    d2 : npt.ArrayLike
-
-    labels : list[str]
-        labels[0] is the label for d1, labels[1] is the label for d2
     """
-    plt.plot(d1, marker='o', label=labels[0])
-    plt.plot(d2, marker='o', label=labels[1])
-    plt.title("$\\Delta$ in modality across trials and hypotheses")
+    plt.plot(deltas(DG1, idx), marker='o', label=labels[0])
+    plt.plot(deltas(DG2, idx), marker='o', label=labels[1])
+    plt.title("$\\Delta$ in modality across {} and hypotheses".format(idx.capitalize()))
 
-    plt.xlabel("Trial")
+    plt.xlabel(idx.capitalize())
     plt.ylabel("$\\Delta$")
 
     plt.legend()
