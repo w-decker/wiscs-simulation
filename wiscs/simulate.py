@@ -1,10 +1,11 @@
 from . import config
-from .utils import validate_params, parse_params, update_params
+from .params import validate_params, parse_params, update_params
 
 import numpy as np
 import warnings
 import numpy.typing as npt
 import pandas as pd
+import copy
 
 def make_tasks(low, high, n) -> npt.ArrayLike:
     """Generate task parameters"""
@@ -57,7 +58,7 @@ class DataGenerator(object):
     """ 
 
     def __init__(self):
-        self.params = config.p  
+        self.params = copy.deepcopy(config.p)
 
     def fit(self, params:dict=None, overwrite:bool=False):
         if overwrite:
@@ -75,7 +76,8 @@ class DataGenerator(object):
                 validate_params(params)
                 self.data = generate(parse_params(params))
             elif params is not None and len(params) != len(self.params):
-                self.data = generate(update_params(self.params, params))
+                params = update_params(self.params, params)
+                self.data = generate(params)
             else:
                 self.data = generate(self.params)
 
