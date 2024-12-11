@@ -7,6 +7,8 @@ import types
 EMPTY_PARAMS = {
     'word.concept': Union[int, float],
     'image.concept': Union[int, float],
+    'image.*': Union[int, float, Callable[..., npt.ArrayLike]],
+    'word.*': Union[int, float, Callable[..., npt.ArrayLike]],
     'word.task': Union[npt.ArrayLike, Callable[..., npt.ArrayLike]],
     'image.task': Union[npt.ArrayLike, Callable[..., npt.ArrayLike]],
     'var.image': Union[int, float],
@@ -21,21 +23,25 @@ EMPTY_PARAMS = {
 def validate_params(params: dict) -> bool:
     for key, value in params.items():
         if key not in EMPTY_PARAMS:
-            raise ValueError(f"Unexpected parameter: {key}")
-        
-        expected_type = EMPTY_PARAMS[key]
+            # Check for wildcard keys like `image.*`
+            if any(key.startswith(prefix.split('.')[0]) and "*" in prefix for prefix in EMPTY_PARAMS):
+                expected_type = EMPTY_PARAMS['image.*']
+            else:
+                raise ValueError(f"Unexpected parameter: {key}")
+        else:
+            expected_type = EMPTY_PARAMS[key]
 
+        # Validate the type
         if isinstance(expected_type, type):
             if not isinstance(value, expected_type):
                 raise TypeError(f"Parameter {key} should be {expected_type}, but got {type(value)}")
 
         elif (isinstance(expected_type, types.UnionType) or
               (hasattr(expected_type, '__origin__') and expected_type.__origin__ is Union)):
-
             union_args = get_args(expected_type)
             if not any(isinstance(value, t) for t in union_args):
                 raise TypeError(f"Parameter {key} should be one of {union_args}, but got {type(value)}")
-            
+
         elif expected_type == npt.ArrayLike:
             if not isinstance(value, (list, tuple, np.ndarray)):
                 raise TypeError(f"Parameter {key} should be an array-like, but got {type(value)}")

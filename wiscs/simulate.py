@@ -22,6 +22,16 @@ def generate(params:dict) -> npt.ArrayLike | npt.ArrayLike:
     if not np.array_equal(params["image"]["task"], params["word"]["task"]):
         warnings.warn("Tasks parameters are different. Generating data for ALTERNATIVE hypothesis.")
 
+    additional_image_vars = sum(
+        params["image"].get(key, 0) 
+        for key in params["image"] if key not in ["concept", "task"]
+    )
+
+    additional_word_vars = sum(
+        params["word"].get(key, 0) 
+        for key in params["word"] if key not in ["concept", "task"]
+    )
+
     # noise distributions
     var_item_image = np.random.normal(0, params["var"]["image"], (params["n"]["participant"], params["n"]["question"], params["n"]["trial"]))
     var_item_word = np.random.normal(0, params["var"]["word"], (params["n"]["participant"], params["n"]["question"], params["n"]["trial"]))
@@ -30,11 +40,13 @@ def generate(params:dict) -> npt.ArrayLike | npt.ArrayLike:
 
     return \
             (params["image"]["concept"]
+            + additional_image_vars
            + params["image"]["task"][None, :, None] 
            + var_item_image
            + var_participant
            + var_question), \
             (params["word"]["concept"]
+             + additional_word_vars
             + params["word"]["task"][None, :, None]
             + var_item_word
             + var_question
