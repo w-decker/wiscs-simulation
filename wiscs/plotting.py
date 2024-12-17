@@ -182,7 +182,7 @@ def plot_scatter(DG1:DataGenerator, DG2:DataGenerator, idx:str, labels:list[str]
     ax2.errorbar(n, wordm1, yerr=worde1, fmt='s', color='red', label='Word', capsize=5, alpha=0.5)
     ax2.errorbar(n, imagem1, yerr=imagee1, fmt='d', color='orange', label='Image', capsize=5, alpha=0.5)
     ax2.set_xlabel(idx.capitalize())
-    ax2.set_ylabel('Mean Score')
+    ax2.set_ylabel('Mean RT')
     ax2.set_title(labels[1])
     ax2.legend()
 
