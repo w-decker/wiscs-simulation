@@ -24,3 +24,6 @@ We contrast these data with an alternative hypothesis, that conceptual processin
 ![alt text](figs/alt1.png)
 
 If this is the case, differences in reaction times acorss words and images over trials will not be consistent. 
+
+>[!NOTE]
+> `power` branch contains the most up-to-date simulations
