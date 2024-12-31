@@ -109,10 +109,6 @@ def simulate(
         and possibly columns for 'group' or 'condition' if between-subject splits exist.
     """
 
-    if task is None:
-        # Default: no extra task effects
-        task = {'word': [0]*n_questions, 'image': [0]*n_questions}
-
     items_within = design.get('items', True)
     if items_within:
         item_subgroups = [dict(label='both', n_participants=n_participants, sees_word=True, sees_image=True)]
